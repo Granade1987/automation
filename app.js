@@ -6,8 +6,7 @@ function log(msg) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// We maken de cleaning iets minder agressief om unieke ID's te behouden
-function strictClean(val) {
+function clean(val) {
     if (val === undefined || val === null) return "";
     return String(val).trim().toLowerCase();
 }
@@ -33,7 +32,7 @@ async function prepareSource() {
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
-    document.getElementById('debugLog').innerHTML = "ANALYSE START...<br>";
+    document.getElementById('debugLog').innerHTML = "START BRON ANALYSE...<br>";
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
@@ -43,25 +42,29 @@ async function prepareSource() {
         rows.forEach((row, i) => {
             if (i === 0 || !row || row.length < 2) return; 
 
-            // Bron locaties: B=1, C=2, D=3, E=4, F=5
-            const idB2 = strictClean(row[1]); 
-            const titelC = strictClean(row[2]);
-            const kleurD = strictClean(row[3]);
-            const combiKey = `${idB2}|${titelC} ${kleurD}`;
+            // BRON (Bestand 2) INDEXERING:
+            // B=1 (ID), C=2 (Titel), D=3 (Kleur)
+            // G=6 (SalePrijs), H=7 (Percentage)
+            const id = clean(row[1]); 
+            const titel = clean(row[2]);
+            const kleur = clean(row[3]);
+            const keyI = `${titel} ${kleur}`.trim(); // De samengestelde sleutel I
             
-            const salePrijs = row[4];   // SalePrijs
-            const percentage = row[5];  // Percentage
+            const salePrijs = row[6]; // Kolom G (Sale Prijs)
+            const percentage = row[7]; // Kolom H (Percentage)
 
-            if (idB2) {
-                // Als er al een prijs staat voor deze sleutel, loggen we dat
-                if (sourceDataMap.has(combiKey)) {
-                    log(`⚠️ Dubbele match gevonden voor ${combiKey}. Oude prijs: ${sourceDataMap.get(combiKey).salePrijs}, Nieuwe: ${salePrijs}`);
+            if (id && keyI) {
+                const combinedKey = `${id}|${keyI}`;
+                sourceDataMap.set(combinedKey, { salePrijs, percentage });
+                
+                // Debug voor de 38 euro rij
+                if (salePrijs == 38) {
+                    log(`GEVONDEN: ${combinedKey} = €${salePrijs} (${percentage})`);
                 }
-                sourceDataMap.set(combiKey, { salePrijs, percentage });
             }
         });
     }
-    log(`✅ Analyse klaar. ${sourceDataMap.size} unieke koppelingen opgeslagen.`);
+    log(`Klaar! ${sourceDataMap.size} rijen geladen uit alle tabbladen.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
@@ -74,30 +77,39 @@ async function mapAndDownload() {
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            if (i === 0) return [...row, "SalePrijs", "Percentage"];
+            // We voegen SalePrijs toe aan H (index 7) en Percentage aan I (index 8)
+            // Als de rij korter is, vullen we hem aan met lege waarden
+            let newRow = [...row];
+            while (newRow.length < 9) newRow.push("");
+
+            if (i === 0) {
+                newRow[7] = "SalePrijs";
+                newRow[8] = "Percentage";
+                return newRow;
+            }
             
-            // Doel locaties: D=3, E=4
-            const idB1 = strictClean(row[3]); 
-            const infoB1 = strictClean(row[4]); 
+            // DOEL (Bestand 1) INDEXERING:
+            // D=3 (ID), E=4 (Titel Kleur combinatie)
+            const idB1 = clean(row[3]); 
+            const infoB1 = clean(row[4]); 
             
             const searchKey = `${idB1}|${infoB1}`;
             const match = sourceDataMap.get(searchKey);
 
             if (match) {
-                // DEBUG: Log de match voor de bewuste 38 euro (als voorbeeld)
-                if (match.salePrijs == 38 || match.salePrijs == 75) {
-                    log(`Match gevonden! Sleutel: ${searchKey} -> Prijs: ${match.salePrijs}`);
-                }
-                return [...row, match.salePrijs, match.percentage];
+                newRow[7] = match.salePrijs;
+                newRow[8] = match.percentage;
             } else {
-                return [...row, "", ""];
+                newRow[7] = "";
+                newRow[8] = "";
             }
+            return newRow;
         });
 
         const ws = XLSX.utils.aoa_to_sheet(updated);
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log("Bestand gereed voor download.");
-    XLSX.writeFile(newWorkbook, "RESULTAAT_GECHECKT.xlsx");
+    log("Mapping voltooid. Bestand wordt gedownload.");
+    XLSX.writeFile(newWorkbook, "Croyez_Update_Final.xlsx");
 }
