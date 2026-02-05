@@ -50,9 +50,16 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     if (onlyFile2) {
         // Alleen bestand 2 verwerken
         parseFile(file2, function(results2) {
+            if (results2.data.length > 0) {
+                alert('Bestand 2 eerste rij keys: ' + Object.keys(results2.data[0]).join(', '));
+                alert('Bestand 2 eerste rij waarden: ' + JSON.stringify(results2.data[0]));
+            }
             const newData = results2.data.map(row => {
-                if (row.C && row.D) {
-                    row.I = (row.C || '').trim() + ' ' + (row.D || '').trim();
+                // Kolom C is index 2, D index 3
+                const cVal = row[2] || row.C || '';
+                const dVal = row[3] || row.D || '';
+                if (cVal && dVal) {
+                    row.I = cVal.trim() + ' ' + dVal.trim();
                 }
                 return row;
             });
@@ -77,13 +84,18 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
             // Verwerk bestand 2
             const map = {};
             results2.data.forEach(row => {
-                if (row.C && row.D) {
-                    const kolomI = (row.C || '').trim() + ' ' + (row.D || '').trim();
+                const cVal = row[2] || row.C || '';
+                const dVal = row[3] || row.D || '';
+                if (cVal && dVal) {
+                    const kolomI = cVal.trim() + ' ' + dVal.trim();
                     row.I = kolomI;  // Voeg kolom I toe
-                    const key = (row.B || '').trim().toLowerCase() + kolomI.toLowerCase();
+                    const artVal = row[1] || row.B || '';
+                    const key = artVal.trim().toLowerCase() + kolomI.toLowerCase();
+                    const gVal = row[6] || row.G || '';
+                    const hVal = row[7] || row.H || '';
                     map[key] = {
-                        G: row.G || '',
-                        H: row.H || ''
+                        G: gVal,
+                        H: hVal
                     };
                 }
             });
@@ -95,8 +107,10 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
             
             if (results2.data.length > 0) {
                 const row = results2.data[0];
-                const kolomI = (row.C || '').trim() + ' ' + (row.D || '').trim();
-                alert('Bestand 2 eerste rij: B=' + row.B + ', C=' + row.C + ', D=' + row.D + ', kolomI=' + kolomI + ', I=' + row.I);
+                const cVal = row[2] || row.C || '';
+                const dVal = row[3] || row.D || '';
+                const kolomI = cVal.trim() + ' ' + dVal.trim();
+                alert('Bestand 2 eerste rij: B/index1=' + (row[1] || row.B) + ', C/index2=' + cVal + ', D/index3=' + dVal + ', kolomI=' + kolomI + ', I=' + row.I);
             }
             
             // Lees bestand 1
@@ -105,12 +119,14 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
                 
                 if (results1.data.length > 0) {
                     const row = results1.data[0];
-                    alert('Bestand 1 eerste rij: D=' + row.D + ', E=' + row.E);
+                    alert('Bestand 1 eerste rij: D/index3=' + (row[3] || row.D) + ', E/index4=' + (row[4] || row.E));
                 }
                 
                 // Verwerk bestand 1
                 const newData = results1.data.map(row => {
-                    const key = (row.D || '').trim().toLowerCase() + (row.E || '').trim().toLowerCase();
+                    const modelVal = row[3] || row.D || '';
+                    const varVal = row[4] || row.E || '';
+                    const key = modelVal.trim().toLowerCase() + varVal.trim().toLowerCase();
                     if (map[key]) {
                         row.G = map[key].G;
                         row.H = map[key].H;
