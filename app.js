@@ -52,8 +52,8 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         const map = {};
         results2.data.forEach(row => {
             if (row.C && row.D) {
-                const kolomI = row.C + ' ' + row.D;
-                const key = row.B + kolomI;
+                const kolomI = (row.C || '').trim() + ' ' + (row.D || '').trim();
+                const key = (row.B || '').trim().toLowerCase() + kolomI.toLowerCase();
                 map[key] = {
                     G: row.G || '',
                     H: row.H || ''
@@ -61,17 +61,23 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
             }
         });
         
+        alert('Aantal entries in map: ' + Object.keys(map).length);
+        
         // Lees bestand 1
         parseFile(file1, function(results1) {
+            alert('Aantal rijen in bestand 1: ' + results1.data.length);
+            
             // Verwerk bestand 1
             const newData = results1.data.map(row => {
-                const key = row.D + row.E;
+                const key = (row.D || '').trim().toLowerCase() + (row.E || '').trim().toLowerCase();
                 if (map[key]) {
                     row.G = map[key].G;
                     row.H = map[key].H;
                 }
                 return row;
             });
+            
+            alert('Aantal matches: ' + newData.filter(row => row.G).length);
             
             // Maak nieuwe CSV
             const csv = Papa.unparse(newData);
