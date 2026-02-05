@@ -64,6 +64,10 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
                 return row;
             });
             
+            if (newData.length > 0) {
+                alert('Nieuwe data eerste rij: ' + JSON.stringify(newData[0]));
+            }
+            
             const csv = Papa.unparse(newData);
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
