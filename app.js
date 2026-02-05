@@ -1,3 +1,35 @@
+function parseFile(file, callback) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = e.target.result;
+        if (file.name.endsWith('.xlsx')) {
+            const workbook = XLSX.read(data, {type: 'binary'});
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            const headers = json[0];
+            const rows = json.slice(1).map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] || '';
+                });
+                return obj;
+            });
+            callback({data: rows});
+        } else {
+            Papa.parse(data, {
+                header: true,
+                complete: callback
+            });
+        }
+    };
+    if (file.name.endsWith('.xlsx')) {
+        reader.readAsBinaryString(file);
+    } else {
+        reader.readAsText(file);
+    }
+}
+
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -10,58 +42,42 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     }
     
     // Lees bestand 2 eerst
-    const reader2 = new FileReader();
-    reader2.onload = function(e) {
-        const csv2 = e.target.result;
-        Papa.parse(csv2, {
-            header: true,
-            complete: function(results2) {
-                // Verwerk bestand 2
-                const map = {};
-                results2.data.forEach(row => {
-                    if (row.C && row.D) {
-                        const kolomI = row.C + ' ' + row.D;
-                        const key = row.ARTIKELNAAM + kolomI;
-                        map[key] = {
-                            G: row.G || '',
-                            H: row.H || ''
-                        };
-                    }
-                });
-                
-                // Lees bestand 1
-                const reader1 = new FileReader();
-                reader1.onload = function(e) {
-                    const csv1 = e.target.result;
-                    Papa.parse(csv1, {
-                        header: true,
-                        complete: function(results1) {
-                            // Verwerk bestand 1
-                            const newData = results1.data.map(row => {
-                                const key = row.MODEL + row['Bestnr/variant'];
-                                if (map[key]) {
-                                    row.G = map[key].G;
-                                    row.H = map[key].H;
-                                }
-                                return row;
-                            });
-                            
-                            // Maak nieuwe CSV
-                            const csv = Papa.unparse(newData);
-                            
-                            // Download link
-                            const blob = new Blob([csv], { type: 'text/csv' });
-                            const url = URL.createObjectURL(blob);
-                            const link = document.getElementById('downloadLink');
-                            link.href = url;
-                            link.style.display = 'block';
-                            link.textContent = 'Download Resultaat CSV';
-                        }
-                    });
+    parseFile(file2, function(results2) {
+        // Verwerk bestand 2
+        const map = {};
+        results2.data.forEach(row => {
+            if (row.C && row.D) {
+                const kolomI = row.C + ' ' + row.D;
+                const key = row.ARTIKELNAAM + kolomI;
+                map[key] = {
+                    G: row.G || '',
+                    H: row.H || ''
                 };
-                reader1.readAsText(file1);
             }
         });
-    };
-    reader2.readAsText(file2);
+        
+        // Lees bestand 1
+        parseFile(file1, function(results1) {
+            // Verwerk bestand 1
+            const newData = results1.data.map(row => {
+                const key = row.MODEL + row['Bestnr/variant'];
+                if (map[key]) {
+                    row.G = map[key].G;
+                    row.H = map[key].H;
+                }
+                return row;
+            });
+            
+            // Maak nieuwe CSV
+            const csv = Papa.unparse(newData);
+            
+            // Download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.getElementById('downloadLink');
+            link.href = url;
+            link.style.display = 'block';
+            link.textContent = 'Download Resultaat CSV';
+        });
+    });
 });

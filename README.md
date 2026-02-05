@@ -4,8 +4,8 @@ Dit programma verwerkt twee CSV-bestanden om kolommen toe te voegen op basis van
 
 ## Gebruik
 
-1. Upload Bestand 1 (het goede bestand met MODEL en Bestnr/variant kolommen).
-2. Upload Bestand 2 (het niet-goede bestand met ARTIKELNAAM, C, D, G, H kolommen).
+1. Upload Bestand 1 (het goede bestand met MODEL en Bestnr/variant kolommen) - CSV of XLSX.
+2. Upload Bestand 2 (het niet-goede bestand met ARTIKELNAAM, C, D, G, H kolommen) - CSV of XLSX.
 3. Klik op "Verwerk Bestanden".
 4. Download het resulterende CSV-bestand.
 
