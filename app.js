@@ -6,9 +6,10 @@ function log(msg) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-function clean(val) {
+// Extra krachtige cleaning om verschillen in formatting te negeren
+function superClean(val) {
     if (val === undefined || val === null) return "";
-    return String(val).toLowerCase().replace(/\s+/g, ' ').trim();
+    return String(val).toLowerCase().replace(/[^a-z0-9]/g, '').trim(); 
 }
 
 async function readAllSheets(file) {
@@ -26,80 +27,76 @@ async function readAllSheets(file) {
     });
 }
 
+// STAP 1: Bestand 2 verwerken
 async function prepareSource() {
     const fileInput = document.getElementById('upload2');
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
-    document.getElementById('debugLog').innerHTML = ""; 
-    log("Bestand 2 inlezen...");
+    document.getElementById('debugLog').innerHTML = "LOG START...<br>";
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
     
     for (const name in allSheets) {
         const rows = allSheets[name];
-        const headers = rows[0] || [];
-        
-        // Zoek de juiste kolommen op naam
-        const idxSale = headers.findIndex(h => clean(h).includes("saleprijs") || clean(h).includes("prijs"));
-        const idxPerc = headers.findIndex(h => clean(h).includes("percentage") || clean(h).includes("%"));
-        
-        log(`Tabblad [${name}]: Saleprijs gevonden in kolom ${idxSale}, Percentage in ${idxPerc}`);
-
         rows.forEach((row, i) => {
-            if (i === 0 || !row.length) return; 
+            if (i === 0 || !row || row.length < 2) return; 
 
-            const idB2 = clean(row[1]); // Kolom B
-            const titelC = clean(row[2]); // Kolom C
-            const kleurD = clean(row[3]); // Kolom D
-            const keyI = `${titelC} ${kleurD}`.trim();
+            // Mapping criteria uit Bestand 2
+            const idB2 = superClean(row[1]);  // Kolom B
+            const titelC = superClean(row[2]); // Kolom C
+            const kleurD = superClean(row[3]); // Kolom D
+            const combineI = titelC + kleurD;  // Samengesteld
             
-            // Gebruik de gevonden indexen of gok op E(4) en F(5)
-            const saleVal = row[idxSale !== -1 ? idxSale : 4];
-            const percVal = row[idxPerc !== -1 ? idxPerc : 5];
+            // DE DATA DIE WE NODIG HEBBEN
+            const salePrijs = row[4];   // Kolom E
+            const percentage = row[5];  // Kolom F
 
-            if (idB2 && keyI) {
-                const finalKey = `${idB2}|${keyI}`;
-                sourceDataMap.set(finalKey, { saleVal, percVal });
+            if (idB2 && combineI) {
+                const key = `${idB2}|${combineI}`;
+                sourceDataMap.set(key, { salePrijs, percentage });
+                
+                // Debug eerste rij met 38 euro
+                if (salePrijs == 38) {
+                    log(`BRON GEVONDEN: ID ${row[1]} met prijs ${salePrijs} opgeslagen.`);
+                }
             }
         });
     }
-    
-    log(`Klaar! ${sourceDataMap.size} combinaties opgeslagen.`);
+    log(`Klaar! ${sourceDataMap.size} unieke rijen geladen uit Bron.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
+// STAP 2: Bestand 1 mappen
 async function mapAndDownload() {
     const fileInput = document.getElementById('upload1');
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
-    log("Bestand 1 verwerken...");
-    let matches = 0;
-
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
             if (i === 0) return [...row, "SalePrijs_Nieuw", "Percentage_Nieuw"];
             
-            const idB1 = clean(row[3]);    // Kolom D
-            const infoB1 = clean(row[4]);  // Kolom E
+            // Mapping criteria uit Bestand 1
+            const idB1 = superClean(row[3]);    // Kolom D
+            const combineB1 = superClean(row[4]); // Kolom E (Titel Kleur)
             
-            const searchKey = `${idB1}|${infoB1}`;
+            const searchKey = `${idB1}|${combineB1}`;
             const match = sourceDataMap.get(searchKey);
 
             if (match) {
-                matches++;
-                return [...row, match.saleVal, match.percVal];
+                return [...row, match.salePrijs, match.percentage];
+            } else {
+                return [...row, "", ""];
             }
-            return [...row, "", ""];
         });
 
         const ws = XLSX.utils.aoa_to_sheet(updated);
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log(`Merge voltooid! ${matches} rijen bijgewerkt met prijzen.`);
-    XLSX.writeFile(newWorkbook, "MAP_RESULTAAT_FINAAL.xlsx");
+    log("Bestand gegenereerd. Download start...");
+    XLSX.writeFile(newWorkbook, "FIX_RESULTAAT.xlsx");
 }

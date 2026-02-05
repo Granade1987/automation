@@ -2,35 +2,32 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Mapper v3 - Prijzen & Procenten</title>
+    <title>Excel Mapper - Fix 38 Euro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Excel Mapper Pro</h1>
-            <p>Mapping op ID + Productinfo <br> 
-            Doel: <strong>SalePrijs</strong> & <strong>Percentage</strong> correct overzetten.</p>
+            <h1>Excel Mapper (Correctie Versie)</h1>
+            <p>Focus: Exacte match voor SalePrijs & Percentage</p>
         </header>
 
         <section class="card">
-            <h3>1. Upload Bestand 2 (Bron)</h3>
-            <p class="instruction">Dit is het bestand waar de 38 euro en 50% in staan.</p>
+            <h3>1. Upload Bestand 2 (Bron: De prijzen)</h3>
             <input type="file" id="upload2" accept=".xlsx, .xls, .csv">
-            <button onclick="prepareSource()" class="btn-primary">Analyseer Bronbestand</button>
+            <button onclick="prepareSource()" class="btn-primary">Stap 1: Scan Prijzen</button>
         </section>
 
-        <section id="debugCard" class="card" style="display:none; background: #2c3e50; color: #ecf0f1;">
-            <h3>Live Analyse Logboek</h3>
-            <div id="debugLog" style="font-family: monospace; font-size: 11px; max-height: 250px; overflow-y: scroll; padding: 10px; border: 1px solid #444;"></div>
+        <section id="debugCard" class="card" style="display:none; background: #1a1a1a; color: #00ff00;">
+            <h3>Mapping Monitor</h3>
+            <div id="debugLog" style="font-family: 'Courier New', monospace; font-size: 11px; max-height: 200px; overflow-y: scroll; padding: 10px;"></div>
         </section>
 
         <section class="card disabled" id="step2">
-            <h3>2. Upload Bestand 1 (Doel)</h3>
-            <p class="instruction">Het originele bestand waar de kolommen bij moeten.</p>
+            <h3>2. Upload Bestand 1 (Doel: Het origineel)</h3>
             <input type="file" id="upload1" accept=".xlsx, .xls, .csv">
-            <button onclick="mapAndDownload()" class="btn-success">Start Mapping & Download</button>
+            <button onclick="mapAndDownload()" class="btn-success">Stap 2: Voeg Data toe & Download</button>
         </section>
     </div>
     <script src="app.js"></script>
