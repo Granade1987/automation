@@ -2,25 +2,28 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Mapper Tool</title>
+    <title>Excel Data Mapper</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Data Mapper Tool</h1>
-        
-        <div class="upload-section">
-            <label>1. Upload Bestand 1 (Het Doel):</label>
-            <input type="file" id="file1" accept=".xlsx, .xls, .csv">
+        <h2>Excel Verwerkingstool</h2>
+
+        <div class="card" id="step1">
+            <h3>Stap 1: Bestand 2 voorbereiden</h3>
+            <p>Combineer Kolom C & D in Kolom I</p>
+            <input type="file" id="upload2" accept=".xlsx, .xls, .csv">
+            <button onclick="prepareSource()">Bereid Bronbestand Voor</button>
+            <div id="status1" class="status"></div>
         </div>
 
-        <div class="upload-section">
-            <label>2. Upload Bestand 2 (De Bron):</label>
-            <input type="file" id="file2" accept=".xlsx, .xls, .csv">
+        <div class="card disabled" id="step2">
+            <h3>Stap 2: Mappen met Bestand 1</h3>
+            <p>Voeg G & H toe aan Bestand 1 op basis van de mapping</p>
+            <input type="file" id="upload1" accept=".xlsx, .xls, .csv">
+            <button onclick="mapAndDownload()">Map & Download Resultaat</button>
         </div>
-
-        <button id="processBtn">Verwerk en Download</button>
     </div>
     <script src="app.js"></script>
 </body>
