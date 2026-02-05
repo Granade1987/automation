@@ -2,28 +2,53 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Data Mapper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Merger Pro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h2>Excel Verwerkingstool</h2>
+        <header>
+            <h1>Excel Data Mapper</h1>
+            <p>Combineer, controleer en merge je bestanden.</p>
+        </header>
 
-        <div class="card" id="step1">
-            <h3>Stap 1: Bestand 2 voorbereiden</h3>
-            <p>Combineer Kolom C & D in Kolom I</p>
+        <section class="card" id="step1">
+            <div class="step-number">1</div>
+            <h3>Bestand 2 Voorbereiden (Bron)</h3>
+            <p class="instruction">We voegen Kolom C & D samen voor de mapping en slaan G & H op.</p>
             <input type="file" id="upload2" accept=".xlsx, .xls, .csv">
-            <button onclick="prepareSource()">Bereid Bronbestand Voor</button>
-            <div id="status1" class="status"></div>
-        </div>
+            <button onclick="prepareSource()" class="btn-primary">Genereer Preview & Sleutels</button>
+        </section>
 
-        <div class="card disabled" id="step2">
-            <h3>Stap 2: Mappen met Bestand 1</h3>
-            <p>Voeg G & H toe aan Bestand 1 op basis van de mapping</p>
+        <section id="previewContainer" class="card" style="display:none;">
+            <h3>🔍 Preview Brongegevens</h3>
+            <p id="matchCount" class="status-text"></p>
+            <div class="table-wrapper">
+                <table id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>C (Titel)</th>
+                            <th>D (Kleur)</th>
+                            <th>Nieuwe Kolom I (Sleutel)</th>
+                            <th>G (Data 1)</th>
+                            <th>H (Data 2)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+            <p class="hint">Check of de blauwe kolom de juiste "Sleutel" bevat voor de mapping.</p>
+        </section>
+
+        <section class="card disabled" id="step2">
+            <div class="step-number">2</div>
+            <h3>Bestand 1 Mappen (Doel)</h3>
+            <p class="instruction">Upload het goede bestand. We zoeken de sleutel in Kolom I en voegen de data toe.</p>
             <input type="file" id="upload1" accept=".xlsx, .xls, .csv">
-            <button onclick="mapAndDownload()">Map & Download Resultaat</button>
-        </div>
+            <button onclick="mapAndDownload()" class="btn-success">Merge & Download Resultaat</button>
+        </section>
     </div>
     <script src="app.js"></script>
 </body>
