@@ -2,35 +2,33 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Debug & Mapper</title>
+    <title>Excel Mapper - Kolom E & F</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Excel Mapper (Debug Mode)</h1>
-            <p>Mapping: (B1-D == B2-B) & (B1-E == B2-I)</p>
+            <h1>Excel Mapper</h1>
+            <p>Mapping: (B1-D == B2-B) & (B1-E == B2-I) <br> 
+            Resultaat: Voegt <strong>Bestand 2 Kolom E & F</strong> toe.</p>
         </header>
 
         <section class="card">
-            <h3>1. Upload Bestand 2 (De Bron)</h3>
+            <h3>1. Upload Bestand 2 (Bron)</h3>
             <input type="file" id="upload2" accept=".xlsx, .xls, .csv">
-            <button onclick="prepareSource()" class="btn-primary">Scan & Analyseer Bron</button>
-            <div id="status2" class="status-text"></div>
+            <button onclick="prepareSource()" class="btn-primary">Scan Bronbestand</button>
         </section>
 
         <section id="debugCard" class="card" style="display:none; background: #2c3e50; color: #ecf0f1;">
             <h3>Debug Logboek</h3>
-            <div id="debugLog" style="font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: scroll; padding: 10px; border: 1px solid #444;">
-                Wachten op data...
-            </div>
+            <div id="debugLog" style="font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: scroll; padding: 10px; border: 1px solid #444;"></div>
         </section>
 
         <section class="card disabled" id="step2">
-            <h3>2. Upload Bestand 1 (Het Doel)</h3>
+            <h3>2. Upload Bestand 1 (Doel)</h3>
             <input type="file" id="upload1" accept=".xlsx, .xls, .csv">
-            <button onclick="mapAndDownload()" class="btn-success">Start Mapping & Download</button>
+            <button onclick="mapAndDownload()" class="btn-success">Merge & Download</button>
         </section>
     </div>
     <script src="app.js"></script>

@@ -21,11 +21,13 @@ async function readAllSheets(file) {
     });
 }
 
+// STAP 1: Bestand 2 verwerken
 async function prepareSource() {
     const fileInput = document.getElementById('upload2');
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
+    document.getElementById('debugLog').innerHTML = ""; // Clear log
     log("Bestand 2 inlezen...");
     
     const allSheets = await readAllSheets(fileInput.files[0]);
@@ -33,33 +35,36 @@ async function prepareSource() {
     
     for (const name in allSheets) {
         const rows = allSheets[name];
-        log(`Tabblad [${name}] gevonden met ${rows.length} rijen.`);
+        log(`Tabblad [${name}]: ${rows.length} rijen.`);
         
         rows.forEach((row, i) => {
-            if (i === 0 || !row.length) return; // Skip header
+            if (i === 0 || !row.length) return; 
 
-            // Schoonmaken van data (stript spaties en forceert String)
-            const colB = String(row[1] || "").trim();
-            const colC = String(row[2] || "").trim();
-            const colD = String(row[3] || "").trim();
-            const colI = `${colC} ${colD}`.trim();
-            const valG = row[6] || "";
-            const valH = row[7] || "";
+            const colB = String(row[1] || "").trim(); // ID
+            const colC = String(row[2] || "").trim(); // Titel
+            const colD = String(row[3] || "").trim(); // Kleur
+            const colI = `${colC} ${colD}`.trim();    // Samengestelde sleutel
+            
+            // HIER AANGEPAST: We pakken nu Kolom E (index 4) en F (index 5)
+            const valE = row[4] || ""; 
+            const valF = row[5] || ""; 
 
             if (colB && colI) {
-                const key = `${colB}|${colI}`.toLowerCase(); // Case-insensitive mapping
-                sourceDataMap.set(key, { valG, valH });
-                if (i < 3) log(`Voorbeeld Sleutel gemaakt: ${key}`);
+                const key = `${colB}|${colI}`.toLowerCase();
+                sourceDataMap.set(key, { valE, valF });
             }
         });
     }
     
-    log(`Klaar! ${sourceDataMap.size} unieke combinaties opgeslagen.`);
+    log(`Klaar! ${sourceDataMap.size} unieke combinaties opgeslagen uit de bron.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
+// STAP 2: Bestand 1 mappen
 async function mapAndDownload() {
     const fileInput = document.getElementById('upload1');
+    if (!fileInput.files[0]) return;
+
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
@@ -70,19 +75,21 @@ async function mapAndDownload() {
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            if (i === 0) return [...row, "RESULT_G", "RESULT_H"];
-            
-            const b1D = String(row[3] || "").trim();
-            const b1E = String(row[4] || "").trim();
+            if (i === 0) return [...row, "Toegevoegd_E", "Toegevoegd_F"];
+            if (!row.length) return row;
+
+            const b1D = String(row[3] || "").trim(); // ID kolom in Bestand 1
+            const b1E = String(row[4] || "").trim(); // Samengestelde kolom in Bestand 1
             const searchKey = `${b1D}|${b1E}`.toLowerCase();
             
             const match = sourceDataMap.get(searchKey);
             if (match) {
                 matches++;
-                return [...row, match.valG, match.valH];
+                return [...row, match.valE, match.valF];
             } else {
                 fails++;
-                if (fails < 5) log(`Geen match voor: ${searchKey}`);
+                // Log de eerste paar mislukkingen om te zien wat er mis gaat
+                if (fails < 10) log(`Geen match voor sleutel: "${searchKey}"`);
                 return [...row, "", ""];
             }
         });
@@ -91,6 +98,6 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log(`Merge voltooid! Matches: ${matches}, Mislukt: ${fails}`);
-    XLSX.writeFile(newWorkbook, "DEBUG_RESULTAAT.xlsx");
+    log(`Merge voltooid! Totaal Matches: ${matches}, Totaal Mislukt: ${fails}`);
+    XLSX.writeFile(newWorkbook, "Resultaat_E_F_Mapping.xlsx");
 }
