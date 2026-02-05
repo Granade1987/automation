@@ -37,21 +37,25 @@ async function readAllSheets(file) {
 
 async function prepareSource() {
     try {
+        // Toon debug venster
+        document.getElementById('debugCard').style.display = 'block';
+        document.getElementById('debugLog').innerHTML = '';
+        
         const fileInput = document.getElementById('upload2');
         if (!fileInput.files[0]) {
             alert('Selecteer bestand 2!');
             return;
         }
         
-        console.log('Bestand 2 geselecteerd, bestand naam:', fileInput.files[0].name);
+        log('📂 Bestand 2 geselecteerd: ' + fileInput.files[0].name);
         
         const allSheets = await readAllSheets(fileInput.files[0]);
-        console.log('Sheets gelezen:', Object.keys(allSheets));
+        log('📊 Sheets gelezen: ' + Object.keys(allSheets).join(', '));
         sourceDataMap.clear();
         
         for (const name in allSheets) {
             const rows = allSheets[name];
-            console.log('Verwerking sheet:', name, 'aantal rijen:', rows.length);
+            log('🔄 Sheet "' + name + '": ' + rows.length + ' rijen');
             rows.forEach((row, i) => {
                 if (i < 1 || !row || row.length < 5) return; 
 
@@ -71,31 +75,38 @@ async function prepareSource() {
                 }
             });
         }
+        log('✅ Klaar! ' + sourceDataMap.size + ' unieke combinaties opgeslagen.');
         alert(`Klaar! ${sourceDataMap.size} unieke producten opgeslagen.`);
-        console.log('Map size:', sourceDataMap.size);
         document.getElementById('step2').classList.remove('disabled');
     } catch (error) {
-        console.error('Fout in prepareSource:', error);
+        log('ERROR:' + error.message); // , error);
         alert('Fout: ' + error.message);
     }
 }
 
 async function mapAndDownload() {
     try {
+        // Toon debug venster
+        document.getElementById('debugCard').style.display = 'block';
+        document.getElementById('debugLog').innerHTML = '';
+        
         const fileInput = document.getElementById('upload1');
         if (!fileInput.files[0]) {
             alert('Selecteer bestand 1!');
             return;
         }
         
+        log('📂 Bestand 1 geselecteerd: ' + fileInput.files[0].name);
         const allSheets = await readAllSheets(fileInput.files[0]);
         const newWorkbook = XLSX.utils.book_new();
         
+        log('🔗 Start mapping met ' + sourceDataMap.size + ' opgeslagen combinaties...');
         let matches = 0;
 
         for (const name in allSheets) {
             const rows = allSheets[name];
             const updated = [];
+            log('📋 Sheet "' + name + '": verwerking...');
             
             // Voeg header toe
             if (rows.length > 0) {
@@ -130,15 +141,17 @@ async function mapAndDownload() {
                     updated.push(newRow);
                 }
             }
+            log('✔️ Sheet "' + name + '": ' + (updated.length - 1) + ' matches');
 
             const ws = XLSX.utils.aoa_to_sheet(updated);
             XLSX.utils.book_append_sheet(newWorkbook, ws, name);
         }
 
+        log('🎉 Totaal ' + matches + ' matches gevonden en geexporteerd!');
         alert(`Klaar! ${matches} matches gevonden.`);
         XLSX.writeFile(newWorkbook, "Resultaat_Mapping.xlsx");
     } catch (error) {
-        console.error('Fout in mapAndDownload:', error);
+        log('ERROR: ' + error.message);
         alert('Fout: ' + error.message);
     }
 }
