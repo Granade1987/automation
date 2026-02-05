@@ -54,12 +54,17 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
                 alert('Bestand 2 eerste rij keys: ' + Object.keys(results2.data[0]).join(', '));
                 alert('Bestand 2 eerste rij waarden: ' + JSON.stringify(results2.data[0]));
             }
-            const newData = results2.data.map(row => {
+            const newData = results2.data.map((row, index) => {
                 // Kolom C is index 2, D index 3
                 const cVal = row[2] || row.C || '';
                 const dVal = row[3] || row.D || '';
-                if (cVal && dVal) {
-                    row.I = cVal.trim() + ' ' + dVal.trim();
+                if (index === 0) {
+                    alert('Voor eerste rij: cVal="' + cVal + '", dVal="' + dVal + '"');
+                }
+                if (cVal != null && dVal != null && cVal.toString().trim() && dVal.toString().trim()) {
+                    row.I = cVal.toString().trim() + ' ' + dVal.toString().trim();
+                } else {
+                    alert('Geen I toegevoegd voor rij ' + index + ': cVal="' + cVal + '", dVal="' + dVal + '"');
                 }
                 return row;
             });
