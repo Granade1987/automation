@@ -2,13 +2,16 @@ let sourceDataMap = new Map();
 
 function log(msg) {
     const logDiv = document.getElementById('debugLog');
-    logDiv.innerHTML += `> ${msg}<br>`;
-    logDiv.scrollTop = logDiv.scrollHeight;
+    if(logDiv) {
+        logDiv.innerHTML += `> ${msg}<br>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
 }
 
+// Opschonen van data voor een zuivere match
 function clean(val) {
     if (val === undefined || val === null) return "";
-    return String(val).trim().toLowerCase().replace(/\s+/g, ' ');
+    return String(val).trim().toLowerCase();
 }
 
 async function readAllSheets(file) {
@@ -26,86 +29,90 @@ async function readAllSheets(file) {
     });
 }
 
-// STAP 1: Bestand 2 verwerken
 async function prepareSource() {
     const fileInput = document.getElementById('upload2');
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
     document.getElementById('debugLog').innerHTML = ""; 
-    log("Bestand 2 wordt geanalyseerd...");
+    log("Analyse van Sale Fase bestand...");
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
     
     for (const name in allSheets) {
         const rows = allSheets[name];
-        log(`Tabblad [${name}] wordt gescand...`);
-        
         rows.forEach((row, i) => {
-            if (i === 0 || !row || row.length < 5) return; 
+            // We skippen de header en lege rijen
+            if (i < 1 || !row || row.length < 5) return; 
 
-            // BRON (Bestand 2) LOCATIES:
-            // B (index 1) = ID
-            // C (index 2) = Titel
-            // D (index 3) = Kleur
-            // G (index 6) = SalePrijs (HIEER ZIT DE 38 EURO)
-            // H (index 7) = Percentage (HIER ZIT DE 50%)
-            
-            const id = clean(row[1]); 
-            const titel = clean(row[2]);
+            // BRON INDEXERING (Bestand 2):
+            // 0: Artikelnummer (CA1-PF25-03)
+            // 1: Artikelnaam (Étiquette Cap)
+            // 3: Kleur (Black)
+            // 5: Sale prijs (De 38 of 25 euro)
+            // 6: Percentage (0.5 of 50%)
+
+            const id = clean(row[0]); 
+            const naam = clean(row[1]);
             const kleur = clean(row[3]);
-            const combiKey = `${titel} ${kleur}`.trim();
+            const combiKey = `${naam} ${kleur}`.trim();
             
-            const salePrijs = row[6]; 
-            const percentage = row[7]; 
+            const salePrijs = row[5] || ""; 
+            const percentage = row[6] || ""; 
 
             if (id && combiKey) {
+                // De unieke sleutel die we ook in Bestand 1 verwachten
                 const finalKey = `${id}|${combiKey}`;
                 sourceDataMap.set(finalKey, { salePrijs, percentage });
                 
-                // Extra check voor de 38 euro rij in het logboek
+                // Specifieke log voor jouw voorbeeld van 38 euro
                 if (salePrijs == 38) {
-                    log(`MATCH GEVONDEN: ${finalKey} -> €${salePrijs}`);
+                    log(`BRON MATCH: ${finalKey} = €${salePrijs}`);
                 }
             }
         });
     }
-    log(`Klaar! ${sourceDataMap.size} unieke matches opgeslagen.`);
+    log(`Klaar! ${sourceDataMap.size} prijzen opgeslagen.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
-// STAP 2: Bestand 1 mappen
 async function mapAndDownload() {
     const fileInput = document.getElementById('upload1');
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
+    log("Verwerken van Doelbestand...");
+    let matchCount = 0;
+
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            // We maken een kopie en zorgen dat de rij minstens 9 kolommen lang is
-            let newRow = [...row];
-            while (newRow.length < 9) newRow.push("");
-
+            // Header rij
             if (i === 0) {
-                newRow[7] = "SalePrijs"; // Kolom H
-                newRow[8] = "Percentage"; // Kolom I
-                return newRow;
+                let headerRow = [...row];
+                headerRow[7] = "Sale prijs";
+                headerRow[8] = "Percentage";
+                return headerRow;
             }
             
-            // DOEL (Bestand 1) LOCATIES:
-            // D (index 3) = ID
-            // E (index 4) = Samengestelde Titel Kleur
+            // DOEL INDEXERING (Bestand 1):
+            // D (index 3) = Artikelnummer
+            // E (index 4) = Samengestelde omschrijving
             const idB1 = clean(row[3]); 
             const infoB1 = clean(row[4]); 
             
             const searchKey = `${idB1}|${infoB1}`;
             const match = sourceDataMap.get(searchKey);
 
+            let newRow = [...row];
+            // Zorg dat de rij lang genoeg is voor kolom H en I
+            while (newRow.length < 9) newRow.push("");
+
             if (match) {
-                newRow[7] = match.salePrijs; // Naar Kolom H
-                newRow[8] = match.percentage; // Naar Kolom I
+                matchCount++;
+                newRow[7] = match.salePrijs; // Kolom H
+                newRow[8] = match.percentage; // Kolom I
             }
             return newRow;
         });
@@ -114,6 +121,6 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log("Merge voltooid. Bestand wordt gedownload.");
-    XLSX.writeFile(newWorkbook, "Resultaat_Sale_Update.xlsx");
+    log(`Merge voltooid! ${matchCount} rijen succesvol geüpdatet.`);
+    XLSX.writeFile(newWorkbook, "Croyez_Mapped_Result.xlsx");
 }
