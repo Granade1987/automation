@@ -57,9 +57,11 @@ async function prepareSource() {
 
                 // BRON (Bestand 2): 
                 // Artikelnaam = index 1, Kleur = index 3
-            const artVal = String(row[1] || '');
-            const cVal = String(row[2] || '');
-            const dVal = String(row[3] || '');
+                const artVal = String(row[1] || '');
+                const cVal = String(row[2] || '');
+                const dVal = String(row[3] || '');
+                const kolomI = cVal.trim() + ' ' + dVal.trim();
+                const key = artVal.trim().toLowerCase() + kolomI.toLowerCase();
                 
                 const fVal = String(row[5] || ''); 
                 const gVal = String(row[6] || ''); 
