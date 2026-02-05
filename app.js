@@ -62,10 +62,17 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         });
         
         alert('Aantal entries in map: ' + Object.keys(map).length);
+        if (Object.keys(map).length > 0) {
+            alert('Voorbeeld keys uit map: ' + Object.keys(map).slice(0, 3).join(', '));
+        }
         
         // Lees bestand 1
         parseFile(file1, function(results1) {
             alert('Aantal rijen in bestand 1: ' + results1.data.length);
+            if (results1.data.length > 0) {
+                const exampleKey = (results1.data[0].D || '').trim().toLowerCase() + (results1.data[0].E || '').trim().toLowerCase();
+                alert('Voorbeeld key uit bestand 1: ' + exampleKey);
+            }
             
             // Verwerk bestand 1
             const newData = results1.data.map(row => {
