@@ -9,15 +9,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>Excel Mapper <span style="color: #e74c3c;">Definitieve Fix</span></h1>
-            <p>Mapping: (B1-D = B2-B) & (B1-E = B2-I)<br>
-            Resultaat: <strong>€38</strong> in Kolom H | <strong>50%</strong> in Kolom I</p>
+            <h1>Sale Berekenen<span style="color: #e74c3c;">Joey's Tool</span></h1>
         </header>
 
         <section class="card">
-            <h3>1. Upload Bestand 2 (Bron: Sale Fase 3)</h3>
+            <h3>1. Upload Bestand 2 (Sale Lijst)</h3>
             <input type="file" id="upload2" accept=".xlsx, .xls, .csv">
-            <button onclick="prepareSource()" class="btn-primary">Scan Prijzen uit G & H</button>
+            <button onclick="prepareSource()" class="btn-primary">Kolommen goedzetten</button>
         </section>
 
         <section id="debugCard" class="card" style="display:none; background: #1a1a1a; color: #00ff00;">
@@ -28,7 +26,7 @@
         <section class="card disabled" id="step2">
             <h3>2. Upload Bestand 1 (Doelbestand)</h3>
             <input type="file" id="upload1" accept=".xlsx, .xls, .csv">
-            <button onclick="mapAndDownload()" class="btn-success">Merge & Download</button>
+            <button onclick="mapAndDownload()" class="btn-success">Map & Download</button>
         </section>
     </div>
     <script src="app.js"></script>
