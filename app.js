@@ -1,5 +1,14 @@
 let sourceDataMap = new Map();
 
+function log(msg) {
+    console.log(msg);
+    const logDiv = document.getElementById('debugLog');
+    if(logDiv) {
+        logDiv.innerHTML += `> ${msg}<br>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+}
+
 // Zeer agressieve schoonmaak: alleen letters en cijfers overhouden
 function superClean(val) {
     if (val === undefined || val === null) return "";
@@ -62,10 +71,15 @@ async function prepareSource() {
 
 async function mapAndDownload() {
     const fileInput = document.getElementById('upload1');
+    if (!fileInput.files[0]) {
+        alert('Selecteer bestand 1!');
+        return;
+    }
+    
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
-    // Doelbestand mappen
+    let matches = 0;
 
     for (const name in allSheets) {
         const rows = allSheets[name];
@@ -93,7 +107,6 @@ async function mapAndDownload() {
                 newRow[7] = match.f;
                 newRow[8] = match.g;
             }
-            }
             return newRow;
         });
 
@@ -101,6 +114,7 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    // Merge klaar
+    alert(`Klaar! ${matches} matches gevonden.`);
     XLSX.writeFile(newWorkbook, "Resultaat_Mapping.xlsx");
+}
 }
