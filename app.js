@@ -55,9 +55,9 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
                 alert('Bestand 2 eerste rij waarden: ' + JSON.stringify(results2.data[0]));
             }
             const newData = results2.data.map((row, index) => {
-                // Kolom C is index 2, D index 3
-                const cVal = row[2] || row.C || '';
-                const dVal = row[3] || row.D || '';
+                // Kolom C is index 0, D index 1
+                const cVal = row[0] || row.A || row.C || '';
+                const dVal = row[1] || row.B || row.D || '';
                 if (index === 0) {
                     alert('Voor eerste rij: cVal="' + cVal + '", dVal="' + dVal + '"');
                 }
@@ -93,10 +93,10 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
             // Verwerk bestand 2
             const map = {};
             results2.data.forEach(row => {
-                const cVal = row[2] || row.C || '';
-                const dVal = row[3] || row.D || '';
-                if (cVal && dVal) {
-                    const kolomI = cVal.trim() + ' ' + dVal.trim();
+                const cVal = row[0] || row.A || row.C || '';
+                const dVal = row[1] || row.B || row.D || '';
+                if (cVal != null && dVal != null && cVal.toString().trim() && dVal.toString().trim()) {
+                    const kolomI = cVal.toString().trim() + ' ' + dVal.toString().trim();
                     row.I = kolomI;  // Voeg kolom I toe
                     const artVal = row[1] || row.B || '';
                     const key = artVal.trim().toLowerCase() + kolomI.toLowerCase();
@@ -116,10 +116,10 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
             
             if (results2.data.length > 0) {
                 const row = results2.data[0];
-                const cVal = row[2] || row.C || '';
-                const dVal = row[3] || row.D || '';
-                const kolomI = cVal.trim() + ' ' + dVal.trim();
-                alert('Bestand 2 eerste rij: B/index1=' + (row[1] || row.B) + ', C/index2=' + cVal + ', D/index3=' + dVal + ', kolomI=' + kolomI + ', I=' + row.I);
+                const cVal = row[0] || row.A || row.C || '';
+                const dVal = row[1] || row.B || row.D || '';
+                const kolomI = cVal.toString().trim() + ' ' + dVal.toString().trim();
+                alert('Bestand 2 eerste rij: B/index1=' + (row[1] || row.B) + ', C/index0=' + cVal + ', D/index1=' + dVal + ', kolomI=' + kolomI + ', I=' + row.I);
             }
             
             // Lees bestand 1
