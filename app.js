@@ -57,14 +57,12 @@ async function prepareSource() {
 
                 // BRON (Bestand 2): 
                 // Artikelnaam = index 1, Kleur = index 3
-                const artVal = row[1] || '';
-                const cVal = row[2] || '';
-                const dVal = row[3] || '';
-                const kolomI = cVal.trim() + ' ' + dVal.trim();
-                const key = artVal.trim().toLowerCase() + kolomI.toLowerCase();
+            const artVal = String(row[1] || '');
+            const cVal = String(row[2] || '');
+            const dVal = String(row[3] || '');
                 
-                const fVal = row[5]; 
-                const gVal = row[6]; 
+                const fVal = String(row[5] || ''); 
+                const gVal = String(row[6] || ''); 
 
                 if (key) {
                     sourceDataMap.set(key, { f: fVal, g: gVal });
@@ -103,8 +101,8 @@ async function mapAndDownload() {
                     return h;
                 }
                 
-                const dVal = row[3] || '';
-                const eVal = row[4] || '';
+                const dVal = String(row[3] || '');
+                const eVal = String(row[4] || '');
                 const key = dVal.trim().toLowerCase() + eVal.trim().toLowerCase();
                 
                 const match = sourceDataMap.get(key);
