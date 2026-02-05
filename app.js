@@ -102,4 +102,5 @@ async function mapAndDownload() {
     }
 
     // Merge klaar
+    XLSX.writeFile(newWorkbook, "Resultaat_Mapping.xlsx");
 }
