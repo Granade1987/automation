@@ -4,10 +4,11 @@ Dit programma verwerkt twee CSV-bestanden om kolommen toe te voegen op basis van
 
 ## Gebruik
 
-1. Upload Bestand 1 (het goede bestand met MODEL en Bestnr/variant kolommen) - CSV of XLSX.
-2. Upload Bestand 2 (het niet-goede bestand met ARTIKELNAAM, C, D, G, H kolommen) - CSV of XLSX.
-3. Klik op "Verwerk Bestanden".
-4. Download het resulterende CSV-bestand.
+1. **Stap 1: Bestand 2 verwerken**  
+   Upload alleen bestand 2, vink "Alleen bestand 2 verwerken" aan, en klik Verwerk. Download het verwerkte bestand 2 met kolom I toegevoegd.
+
+2. **Stap 2: Mapping**  
+   Upload beide bestanden, vink de checkbox uit, en klik Verwerk voor de volledige mapping en download van het resultaat.
 
 ## Verwerking
 
