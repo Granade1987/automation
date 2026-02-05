@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Processor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>CSV Bestanden Verwerken</h1>
+    <form id="uploadForm">
+        <label for="file1">Upload Bestand 1 (goed):</label>
+        <input type="file" id="file1" accept=".csv" required><br><br>
+        
+        <label for="file2">Upload Bestand 2 (niet goed):</label>
+        <input type="file" id="file2" accept=".csv" required><br><br>
+        
+        <button type="submit">Verwerk Bestanden</button>
+    </form>
+    
+    <div id="result">
+        <a id="downloadLink" style="display:none;" download="resultaat.csv">Download Resultaat CSV</a>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
