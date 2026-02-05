@@ -1,14 +1,16 @@
-# CSV Processor
+# Excel Processor
 
-Dit programma verwerkt twee CSV-bestanden om kolommen toe te voegen op basis van mapping.
+Dit programma voegt kolommen toe aan een Excel-bestand op basis van mapping met een ander bestand.
+
+## Verwerking
+
+- **Bestand 2** wordt gebruikt als bron: kolommen C en D worden samengevoegd met spatie in een interne kolom I.
+- Mapping gebeurt op: Bestand 1 kolom D + kolom E tegen Bestand 2 kolom B + kolom I.
+- Bij match worden kolommen F en G uit Bestand 2 toegevoegd aan Bestand 1 als nieuwe kolommen H en I.
 
 ## Gebruik
 
-1. **Stap 1: Bestand 2 verwerken**  
-   Upload alleen bestand 2, vink "Alleen bestand 2 verwerken" aan, en klik Verwerk. Download het verwerkte bestand 2 met kolom I toegevoegd.
-
-2. **Stap 2: Mapping**  
-   Upload beide bestanden, vink de checkbox uit, en klik Verwerk voor de volledige mapping en download van het resultaat.
+Upload beide bestanden en klik op de knoppen om te verwerken.
 
 ## Verwerking
 

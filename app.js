@@ -1,13 +1,5 @@
 let sourceDataMap = new Map();
 
-function log(msg) {
-    const logDiv = document.getElementById('debugLog');
-    if(logDiv) {
-        logDiv.innerHTML += `> ${msg}<br>`;
-        logDiv.scrollTop = logDiv.scrollHeight;
-    }
-}
-
 // Zeer agressieve schoonmaak: alleen letters en cijfers overhouden
 function superClean(val) {
     if (val === undefined || val === null) return "";
@@ -33,9 +25,7 @@ async function prepareSource() {
     const fileInput = document.getElementById('upload2');
     if (!fileInput.files[0]) return;
     
-    document.getElementById('debugCard').style.display = 'block';
-    document.getElementById('debugLog').innerHTML = ""; 
-    log("Bronbestand analyseren op Productnaam + Kleur...");
+    // Bronbestand analyseren
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
@@ -48,16 +38,17 @@ async function prepareSource() {
             // BRON (Bestand 2): 
             // Artikelnaam = index 1, Kleur = index 3
             // Sale prijs = index 5, Percentage = index 6
-            const naam = superClean(row[1]);
-            const kleur = superClean(row[3]);
-            const tekstSleutel = naam + kleur;
+            const artVal = row[1] || '';
+            const cVal = row[2] || '';
+            const dVal = row[3] || '';
+            const kolomI = cVal.trim() + ' ' + dVal.trim();
+            const key = artVal.trim().toLowerCase() + kolomI.toLowerCase();
             
-            const salePrijs = row[5]; 
-            const percentage = row[6]; 
+            const fVal = row[5]; 
+            const gVal = row[6]; 
 
-            if (tekstSleutel) {
-                // We slaan op basis van de tekst-combi op
-                sourceDataMap.set(tekstSleutel, { salePrijs, percentage });
+            if (key) {
+                sourceDataMap.set(key, { f: fVal, g: gVal });
                 
                 if (row[5] == 38) {
                     log(`GEVONDEN IN BRON: "${row[1]} ${row[3]}" -> €${row[5]}`);
@@ -74,32 +65,34 @@ async function mapAndDownload() {
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
-    log("Doelbestand mappen...");
-    let matches = 0;
+    // Doelbestand mappen
 
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
             if (i === 0) {
                 let h = [...row];
-                h[7] = "Sale prijs"; h[8] = "Percentage";
+                h[7] = "Kolom F"; h[8] = "Kolom G";
                 return h;
             }
             
             // DOEL (Bestand 1):
-            // De tekst-combi staat in Kolom E (index 4)
-            // Bijv: "oversized stamp t-shirt 2100 white"
-            const infoB1 = superClean(row[4]); 
+            // Mapping 1: kolom D (index 3) tegen bestand 2 kolom B
+            // Mapping 2: kolom E (index 4) tegen bestand 2 kolom I
+            const dVal = row[3] || '';
+            const eVal = row[4] || '';
+            const key = dVal.trim().toLowerCase() + eVal.trim().toLowerCase();
             
-            const match = sourceDataMap.get(infoB1);
+            const match = sourceDataMap.get(key);
 
             let newRow = [...row];
             while (newRow.length < 9) newRow.push("");
 
             if (match) {
                 matches++;
-                newRow[7] = match.salePrijs;
-                newRow[8] = match.percentage;
+                newRow[7] = match.f;
+                newRow[8] = match.g;
+            }
             }
             return newRow;
         });
@@ -108,6 +101,5 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log(`Merge klaar! ${matches} matches gevonden op basis van productnaam.`);
-    XLSX.writeFile(newWorkbook, "Croyez_Definitief_Mapped.xlsx");
+    // Merge klaar
 }
