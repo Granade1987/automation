@@ -6,6 +6,12 @@ function log(msg) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
+// Functie om data echt goed schoon te maken voor mapping
+function clean(val) {
+    if (val === undefined || val === null) return "";
+    return String(val).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 async function readAllSheets(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -27,36 +33,40 @@ async function prepareSource() {
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
-    document.getElementById('debugLog').innerHTML = ""; // Clear log
-    log("Bestand 2 inlezen...");
+    document.getElementById('debugLog').innerHTML = ""; 
+    log("Bestand 2 (Bron) wordt geanalyseerd...");
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
     
     for (const name in allSheets) {
         const rows = allSheets[name];
-        log(`Tabblad [${name}]: ${rows.length} rijen.`);
+        log(`Tabblad [${name}]: ${rows.length} rijen gevonden.`);
         
         rows.forEach((row, i) => {
-            if (i === 0 || !row.length) return; 
+            if (i === 0 || !row || row.length < 2) return; 
 
-            const colB = String(row[1] || "").trim(); // ID
-            const colC = String(row[2] || "").trim(); // Titel
-            const colD = String(row[3] || "").trim(); // Kleur
-            const colI = `${colC} ${colD}`.trim();    // Samengestelde sleutel
+            // Mapping 1: ID uit kolom B (index 1)
+            const idB2 = clean(row[1]); 
             
-            // HIER AANGEPAST: We pakken nu Kolom E (index 4) en F (index 5)
-            const valE = row[4] || ""; 
-            const valF = row[5] || ""; 
+            // Mapping 2: Titel (C) + Kleur (D) voor de I-kolom
+            const titelC = clean(row[2]);
+            const kleurD = clean(row[3]);
+            const sleutelI = clean(`${titelC} ${kleurD}`);
+            
+            // Data om over te zetten: SalePrijs (E=index 4) en Percentage (F=index 5)
+            const salePrijs = row[4] !== undefined ? row[4] : ""; 
+            const percentage = row[5] !== undefined ? row[5] : ""; 
 
-            if (colB && colI) {
-                const key = `${colB}|${colI}`.toLowerCase();
-                sourceDataMap.set(key, { valE, valF });
+            if (idB2 && sleutelI) {
+                // We maken een unieke combi-sleutel
+                const finalKey = `${idB2}|${sleutelI}`;
+                sourceDataMap.set(finalKey, { salePrijs, percentage });
             }
         });
     }
     
-    log(`Klaar! ${sourceDataMap.size} unieke combinaties opgeslagen uit de bron.`);
+    log(`Klaar! ${sourceDataMap.size} unieke prijs-combinaties opgeslagen.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
@@ -68,28 +78,30 @@ async function mapAndDownload() {
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
-    log("Bestand 1 verwerken...");
+    log("Bestand 1 (Doel) wordt verwerkt...");
     let matches = 0;
     let fails = 0;
 
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            if (i === 0) return [...row, "Toegevoegd_E", "Toegevoegd_F"];
-            if (!row.length) return row;
+            // Header aanpassen
+            if (i === 0) return [...row, "SalePrijs", "Percentage"];
+            if (!row || row.length === 0) return row;
 
-            const b1D = String(row[3] || "").trim(); // ID kolom in Bestand 1
-            const b1E = String(row[4] || "").trim(); // Samengestelde kolom in Bestand 1
-            const searchKey = `${b1D}|${b1E}`.toLowerCase();
+            // Zoekwaarden in Bestand 1
+            const idB1 = clean(row[3]);    // Kolom D (index 3)
+            const combiB1 = clean(row[4]); // Kolom E (index 4)
             
+            const searchKey = `${idB1}|${combiB1}`;
             const match = sourceDataMap.get(searchKey);
+
             if (match) {
                 matches++;
-                return [...row, match.valE, match.valF];
+                return [...row, match.salePrijs, match.percentage];
             } else {
                 fails++;
-                // Log de eerste paar mislukkingen om te zien wat er mis gaat
-                if (fails < 10) log(`Geen match voor sleutel: "${searchKey}"`);
+                if (fails < 5) log(`Geen match voor: ${searchKey}`);
                 return [...row, "", ""];
             }
         });
@@ -98,6 +110,6 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log(`Merge voltooid! Totaal Matches: ${matches}, Totaal Mislukt: ${fails}`);
-    XLSX.writeFile(newWorkbook, "Resultaat_E_F_Mapping.xlsx");
+    log(`Merge voltooid! Matches gevonden: ${matches}. Niet gevonden: ${fails}.`);
+    XLSX.writeFile(newWorkbook, "Resultaat_Met_Prijzen.xlsx");
 }
