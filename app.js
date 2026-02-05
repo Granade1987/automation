@@ -98,8 +98,8 @@ async function mapAndDownload() {
             const updated = rows.map((row, i) => {
                 if (i === 0) {
                     let h = [...row];
-                    h[7] = "Kolom F"; 
-                    h[8] = "Kolom G";
+                    h[7] = "Prijs (€)"; 
+                    h[8] = "Korting (%)";
                     return h;
                 }
                 
@@ -114,8 +114,9 @@ async function mapAndDownload() {
 
                 if (match) {
                     matches++;
-                    newRow[7] = match.f;
-                    newRow[8] = match.g;
+                    // Kolom F: EUROS, Kolom G: PROCENTEN
+                    newRow[7] = '€' + String(match.f).replace('.', ',');
+                    newRow[8] = String(match.g) + '%';
                 }
                 return newRow;
             });
