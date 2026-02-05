@@ -11,6 +11,7 @@ Dit programma verwerkt twee CSV-bestanden om kolommen toe te voegen op basis van
 
 ## Verwerking
 
+- Voor XLSX-bestanden worden alle tabbladen (bladen) meegenomen en samengevoegd.
 - In Bestand 2 worden kolommen C en D samengevoegd met een spatie in een nieuwe kolom I.
 - Mapping gebeurt op ARTIKELNAAM + kolom I (van Bestand 2) en MODEL + Bestnr/variant (van Bestand 1).
 - Voor overeenkomende rijen worden kolommen G en H van Bestand 2 toegevoegd aan Bestand 1.

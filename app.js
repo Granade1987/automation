@@ -4,18 +4,23 @@ function parseFile(file, callback) {
         const data = e.target.result;
         if (file.name.endsWith('.xlsx')) {
             const workbook = XLSX.read(data, {type: 'binary'});
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-            const headers = json[0];
-            const rows = json.slice(1).map(row => {
-                const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = row[index] || '';
-                });
-                return obj;
+            const allData = [];
+            workbook.SheetNames.forEach(sheetName => {
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                if (json.length > 0) {
+                    const headers = json[0];
+                    const rows = json.slice(1).map(row => {
+                        const obj = {};
+                        headers.forEach((header, index) => {
+                            obj[header] = row[index] || '';
+                        });
+                        return obj;
+                    });
+                    allData.push(...rows);
+                }
             });
-            callback({data: rows});
+            callback({data: allData});
         } else {
             Papa.parse(data, {
                 header: true,
