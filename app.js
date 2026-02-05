@@ -8,10 +8,10 @@ function log(msg) {
     }
 }
 
-// Opschonen van data voor een zuivere match
-function clean(val) {
+// Zeer agressieve schoonmaak: alleen letters en cijfers overhouden
+function superClean(val) {
     if (val === undefined || val === null) return "";
-    return String(val).trim().toLowerCase();
+    return String(val).toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 }
 
 async function readAllSheets(file) {
@@ -35,7 +35,7 @@ async function prepareSource() {
     
     document.getElementById('debugCard').style.display = 'block';
     document.getElementById('debugLog').innerHTML = ""; 
-    log("Analyse van Sale Fase bestand...");
+    log("Bronbestand analyseren op Productnaam + Kleur...");
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
@@ -43,37 +43,29 @@ async function prepareSource() {
     for (const name in allSheets) {
         const rows = allSheets[name];
         rows.forEach((row, i) => {
-            // We skippen de header en lege rijen
             if (i < 1 || !row || row.length < 5) return; 
 
-            // BRON INDEXERING (Bestand 2):
-            // 0: Artikelnummer (CA1-PF25-03)
-            // 1: Artikelnaam (Étiquette Cap)
-            // 3: Kleur (Black)
-            // 5: Sale prijs (De 38 of 25 euro)
-            // 6: Percentage (0.5 of 50%)
-
-            const id = clean(row[0]); 
-            const naam = clean(row[1]);
-            const kleur = clean(row[3]);
-            const combiKey = `${naam} ${kleur}`.trim();
+            // BRON (Bestand 2): 
+            // Artikelnaam = index 1, Kleur = index 3
+            // Sale prijs = index 5, Percentage = index 6
+            const naam = superClean(row[1]);
+            const kleur = superClean(row[3]);
+            const tekstSleutel = naam + kleur;
             
-            const salePrijs = row[5] || ""; 
-            const percentage = row[6] || ""; 
+            const salePrijs = row[5]; 
+            const percentage = row[6]; 
 
-            if (id && combiKey) {
-                // De unieke sleutel die we ook in Bestand 1 verwachten
-                const finalKey = `${id}|${combiKey}`;
-                sourceDataMap.set(finalKey, { salePrijs, percentage });
+            if (tekstSleutel) {
+                // We slaan op basis van de tekst-combi op
+                sourceDataMap.set(tekstSleutel, { salePrijs, percentage });
                 
-                // Specifieke log voor jouw voorbeeld van 38 euro
-                if (salePrijs == 38) {
-                    log(`BRON MATCH: ${finalKey} = €${salePrijs}`);
+                if (row[5] == 38) {
+                    log(`GEVONDEN IN BRON: "${row[1]} ${row[3]}" -> €${row[5]}`);
                 }
             }
         });
     }
-    log(`Klaar! ${sourceDataMap.size} prijzen opgeslagen.`);
+    log(`Klaar! ${sourceDataMap.size} unieke producten opgeslagen.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
@@ -82,37 +74,32 @@ async function mapAndDownload() {
     const allSheets = await readAllSheets(fileInput.files[0]);
     const newWorkbook = XLSX.utils.book_new();
     
-    log("Verwerken van Doelbestand...");
-    let matchCount = 0;
+    log("Doelbestand mappen...");
+    let matches = 0;
 
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            // Header rij
             if (i === 0) {
-                let headerRow = [...row];
-                headerRow[7] = "Sale prijs";
-                headerRow[8] = "Percentage";
-                return headerRow;
+                let h = [...row];
+                h[7] = "Sale prijs"; h[8] = "Percentage";
+                return h;
             }
             
-            // DOEL INDEXERING (Bestand 1):
-            // D (index 3) = Artikelnummer
-            // E (index 4) = Samengestelde omschrijving
-            const idB1 = clean(row[3]); 
-            const infoB1 = clean(row[4]); 
+            // DOEL (Bestand 1):
+            // De tekst-combi staat in Kolom E (index 4)
+            // Bijv: "oversized stamp t-shirt 2100 white"
+            const infoB1 = superClean(row[4]); 
             
-            const searchKey = `${idB1}|${infoB1}`;
-            const match = sourceDataMap.get(searchKey);
+            const match = sourceDataMap.get(infoB1);
 
             let newRow = [...row];
-            // Zorg dat de rij lang genoeg is voor kolom H en I
             while (newRow.length < 9) newRow.push("");
 
             if (match) {
-                matchCount++;
-                newRow[7] = match.salePrijs; // Kolom H
-                newRow[8] = match.percentage; // Kolom I
+                matches++;
+                newRow[7] = match.salePrijs;
+                newRow[8] = match.percentage;
             }
             return newRow;
         });
@@ -121,6 +108,6 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log(`Merge voltooid! ${matchCount} rijen succesvol geüpdatet.`);
-    XLSX.writeFile(newWorkbook, "Croyez_Mapped_Result.xlsx");
+    log(`Merge klaar! ${matches} matches gevonden op basis van productnaam.`);
+    XLSX.writeFile(newWorkbook, "Croyez_Definitief_Mapped.xlsx");
 }
