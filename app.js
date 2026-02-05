@@ -8,7 +8,7 @@ function log(msg) {
 
 function clean(val) {
     if (val === undefined || val === null) return "";
-    return String(val).trim().toLowerCase();
+    return String(val).trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 async function readAllSheets(file) {
@@ -32,39 +32,46 @@ async function prepareSource() {
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
-    document.getElementById('debugLog').innerHTML = "START BRON ANALYSE...<br>";
+    document.getElementById('debugLog').innerHTML = ""; 
+    log("Bestand 2 wordt geanalyseerd...");
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
     
     for (const name in allSheets) {
         const rows = allSheets[name];
+        log(`Tabblad [${name}] wordt gescand...`);
+        
         rows.forEach((row, i) => {
-            if (i === 0 || !row || row.length < 2) return; 
+            if (i === 0 || !row || row.length < 5) return; 
 
-            // BRON (Bestand 2) INDEXERING:
-            // B=1 (ID), C=2 (Titel), D=3 (Kleur)
-            // G=6 (SalePrijs), H=7 (Percentage)
+            // BRON (Bestand 2) LOCATIES:
+            // B (index 1) = ID
+            // C (index 2) = Titel
+            // D (index 3) = Kleur
+            // G (index 6) = SalePrijs (HIEER ZIT DE 38 EURO)
+            // H (index 7) = Percentage (HIER ZIT DE 50%)
+            
             const id = clean(row[1]); 
             const titel = clean(row[2]);
             const kleur = clean(row[3]);
-            const keyI = `${titel} ${kleur}`.trim(); // De samengestelde sleutel I
+            const combiKey = `${titel} ${kleur}`.trim();
             
-            const salePrijs = row[6]; // Kolom G (Sale Prijs)
-            const percentage = row[7]; // Kolom H (Percentage)
+            const salePrijs = row[6]; 
+            const percentage = row[7]; 
 
-            if (id && keyI) {
-                const combinedKey = `${id}|${keyI}`;
-                sourceDataMap.set(combinedKey, { salePrijs, percentage });
+            if (id && combiKey) {
+                const finalKey = `${id}|${combiKey}`;
+                sourceDataMap.set(finalKey, { salePrijs, percentage });
                 
-                // Debug voor de 38 euro rij
+                // Extra check voor de 38 euro rij in het logboek
                 if (salePrijs == 38) {
-                    log(`GEVONDEN: ${combinedKey} = €${salePrijs} (${percentage})`);
+                    log(`MATCH GEVONDEN: ${finalKey} -> €${salePrijs}`);
                 }
             }
         });
     }
-    log(`Klaar! ${sourceDataMap.size} rijen geladen uit alle tabbladen.`);
+    log(`Klaar! ${sourceDataMap.size} unieke matches opgeslagen.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
@@ -77,19 +84,19 @@ async function mapAndDownload() {
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            // We voegen SalePrijs toe aan H (index 7) en Percentage aan I (index 8)
-            // Als de rij korter is, vullen we hem aan met lege waarden
+            // We maken een kopie en zorgen dat de rij minstens 9 kolommen lang is
             let newRow = [...row];
             while (newRow.length < 9) newRow.push("");
 
             if (i === 0) {
-                newRow[7] = "SalePrijs";
-                newRow[8] = "Percentage";
+                newRow[7] = "SalePrijs"; // Kolom H
+                newRow[8] = "Percentage"; // Kolom I
                 return newRow;
             }
             
-            // DOEL (Bestand 1) INDEXERING:
-            // D=3 (ID), E=4 (Titel Kleur combinatie)
+            // DOEL (Bestand 1) LOCATIES:
+            // D (index 3) = ID
+            // E (index 4) = Samengestelde Titel Kleur
             const idB1 = clean(row[3]); 
             const infoB1 = clean(row[4]); 
             
@@ -97,11 +104,8 @@ async function mapAndDownload() {
             const match = sourceDataMap.get(searchKey);
 
             if (match) {
-                newRow[7] = match.salePrijs;
-                newRow[8] = match.percentage;
-            } else {
-                newRow[7] = "";
-                newRow[8] = "";
+                newRow[7] = match.salePrijs; // Naar Kolom H
+                newRow[8] = match.percentage; // Naar Kolom I
             }
             return newRow;
         });
@@ -110,6 +114,6 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log("Mapping voltooid. Bestand wordt gedownload.");
-    XLSX.writeFile(newWorkbook, "Croyez_Update_Final.xlsx");
+    log("Merge voltooid. Bestand wordt gedownload.");
+    XLSX.writeFile(newWorkbook, "Resultaat_Sale_Update.xlsx");
 }

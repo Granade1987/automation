@@ -2,32 +2,33 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Mapper - Croyez Fix</title>
+    <title>Croyez Excel Fixer</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Excel Mapper <span style="color: #e74c3c;">Final Fix</span></h1>
-            <p>Target: Sale Prijs naar Kolom H | Percentage naar Kolom I</p>
+            <h1>Excel Mapper <span style="color: #e74c3c;">Definitieve Fix</span></h1>
+            <p>Mapping: (B1-D = B2-B) & (B1-E = B2-I)<br>
+            Resultaat: <strong>€38</strong> in Kolom H | <strong>50%</strong> in Kolom I</p>
         </header>
 
         <section class="card">
-            <h3>1. Upload Bestand 2 (Bron: Sale Fase bestand)</h3>
+            <h3>1. Upload Bestand 2 (Bron: Sale Fase 3)</h3>
             <input type="file" id="upload2" accept=".xlsx, .xls, .csv">
-            <button onclick="prepareSource()" class="btn-primary">Scan Prijzen</button>
+            <button onclick="prepareSource()" class="btn-primary">Scan Prijzen uit G & H</button>
         </section>
 
         <section id="debugCard" class="card" style="display:none; background: #1a1a1a; color: #00ff00;">
-            <h3>Mapping Monitor</h3>
+            <h3>Analyse Monitor</h3>
             <div id="debugLog" style="font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: scroll; padding: 10px;"></div>
         </section>
 
         <section class="card disabled" id="step2">
-            <h3>2. Upload Bestand 1 (Het Doelbestand)</h3>
+            <h3>2. Upload Bestand 1 (Doelbestand)</h3>
             <input type="file" id="upload1" accept=".xlsx, .xls, .csv">
-            <button onclick="mapAndDownload()" class="btn-success">Merge & Download Resultaat</button>
+            <button onclick="mapAndDownload()" class="btn-success">Merge & Download</button>
         </section>
     </div>
     <script src="app.js"></script>
