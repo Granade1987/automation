@@ -53,24 +53,19 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         results2.data.forEach(row => {
             if (row.C && row.D) {
                 const kolomI = row.C + ' ' + row.D;
-                const key = row.ARTIKELNAAM + kolomI;
-                map[key] = {
-                    G: row.G || '',
-                    H: row.H || ''
-                };
-            }
-        });
-        
-        // Lees bestand 1
-        parseFile(file1, function(results1) {
-            // Verwerk bestand 1
-            const newData = results1.data.map(row => {
-                const key = row.MODEL + row['Bestnr/variant'];
-                if (map[key]) {
-                    row.G = map[key].G;
-                    row.H = map[key].H;
-                }
-                return row;
+            const key = row.B + kolomI;
+            map[key] = {
+                G: row.G || '',
+                H: row.H || ''
+            };
+        }
+    });
+    
+    // Lees bestand 1
+    parseFile(file1, function(results1) {
+        // Verwerk bestand 1
+        const newData = results1.data.map(row => {
+            const key = row.D + row.E;
             });
             
             // Maak nieuwe CSV
