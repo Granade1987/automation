@@ -1,83 +1,98 @@
 let sourceDataMap = new Map();
 
-async function readFile(file) {
+/**
+ * Leest een Excel bestand en geeft een object terug met alle tabbladen als arrays
+ */
+async function readAllSheets(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const workbook = XLSX.read(e.target.result, { type: 'binary' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            resolve(XLSX.utils.sheet_to_json(sheet, { header: 1 }));
+            const allData = {};
+            workbook.SheetNames.forEach(name => {
+                allData[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1 });
+            });
+            resolve({ data: allData, workbook: workbook });
         };
         reader.readAsBinaryString(file);
     });
 }
 
-// STAP 1: Bestand 2 verwerken
+// STAP 1: Bestand 2 verwerken (Alle tabbladen)
 async function prepareSource() {
     const fileInput = document.getElementById('upload2');
     if (!fileInput.files[0]) return alert("Selecteer eerst bestand 2!");
 
-    const rows = await readFile(fileInput.files[0]);
+    const result = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
     const previewBody = document.getElementById('previewBody');
     previewBody.innerHTML = '';
 
     let count = 0;
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || row.length < 2) continue;
 
-        const colB = String(row[1] || "").trim(); // Bestand 2 Kolom B
-        const colC = String(row[2] || "").trim(); // Bestand 2 Kolom C
-        const colD = String(row[3] || "").trim(); // Bestand 2 Kolom D
-        const colI = `${colC} ${colD}`.trim();    // De samengestelde kolom I
+    // Loop door elk tabblad in Bestand 2
+    for (const sheetName in result.data) {
+        const rows = result.data[sheetName];
         
-        const valG = row[6] || ""; // Data uit G
-        const valH = row[7] || ""; // Data uit H
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 2) continue;
 
-        // We maken een unieke combinatiesleutel voor de dubbele check: "B|I"
-        const doubleKey = `${colB}|${colI}`;
-        sourceDataMap.set(doubleKey, { valG, valH });
+            const colB = String(row[1] || "").trim(); // Index 1
+            const colC = String(row[2] || "").trim(); // Index 2
+            const colD = String(row[3] || "").trim(); // Index 3
+            const colI = `${colC} ${colD}`.trim();    // Samengestelde I
+            
+            const valG = row[6] || ""; // Index 6
+            const valH = row[7] || ""; // Index 7
 
-        if (count < 10) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${colB}</td><td>${colC}</td><td>${colD}</td><td class="highlight">${colI}</td><td>${valG}</td><td>${valH}</td>`;
-            previewBody.appendChild(tr);
-            count++;
+            const doubleKey = `${colB}|${colI}`;
+            if (colB && colI) {
+                sourceDataMap.set(doubleKey, { valG, valH });
+
+                if (count < 10) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${colB}</td><td class="highlight">${colI}</td><td>${valG}</td><td>${valH}</td>`;
+                    previewBody.appendChild(tr);
+                    count++;
+                }
+            }
         }
     }
 
-    document.getElementById('matchCount').innerText = `✅ ${sourceDataMap.size} rijen klaar voor mapping.`;
+    document.getElementById('matchCount').innerText = `✅ ${sourceDataMap.size} unieke combinaties gevonden over alle tabbladen.`;
     document.getElementById('previewContainer').style.display = 'block';
     document.getElementById('step2').classList.remove('disabled');
 }
 
-// STAP 2: Bestand 1 mappen
+// STAP 2: Bestand 1 mappen (Alle tabbladen)
 async function mapAndDownload() {
     const fileInput = document.getElementById('upload1');
     if (!fileInput.files[0]) return alert("Selecteer eerst bestand 1!");
 
-    const rows = await readFile(fileInput.files[0]);
-    
-    const resultRows = rows.map((row, index) => {
-        if (index === 0) return [...row, "Matched_G", "Matched_H"];
+    const result = await readAllSheets(fileInput.files[0]);
+    const newWorkbook = XLSX.utils.book_new();
 
-        const b1ColD = String(row[3] || "").trim(); // Bestand 1 Kolom D
-        const b1ColE = String(row[4] || "").trim(); // Bestand 1 Kolom E
+    // Loop door elk tabblad in Bestand 1
+    for (const sheetName in result.data) {
+        const rows = result.data[sheetName];
+        
+        const updatedRows = rows.map((row, index) => {
+            if (index === 0) return [...row, "Matched_G", "Matched_H"];
+            if (!row || row.length === 0) return row;
 
-        // Maak dezelfde combinatiesleutel voor de check
-        const searchKey = `${b1ColD}|${b1ColE}`;
-        const match = sourceDataMap.get(searchKey);
+            const b1ColD = String(row[3] || "").trim(); // Index 3
+            const b1ColE = String(row[4] || "").trim(); // Index 4
 
-        if (match) {
-            return [...row, match.valG, match.valH];
-        } else {
-            return [...row, "", ""]; // Geen match = lege kolommen
-        }
-    });
+            const searchKey = `${b1ColD}|${b1ColE}`;
+            const match = sourceDataMap.get(searchKey);
 
-    const ws = XLSX.utils.aoa_to_sheet(resultRows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Resultaat");
-    XLSX.writeFile(wb, "Bestand1_Updated.xlsx");
+            return match ? [...row, match.valG, match.valH] : [...row, "", ""];
+        });
+
+        const newSheet = XLSX.utils.aoa_to_sheet(updatedRows);
+        XLSX.utils.book_append_sheet(newWorkbook, newSheet, sheetName);
+    }
+
+    XLSX.writeFile(newWorkbook, "Bestand1_Compleet_Gemapped.xlsx");
 }
