@@ -6,10 +6,10 @@ function log(msg) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// Extra krachtige cleaning om verschillen in formatting te negeren
-function superClean(val) {
+// We maken de cleaning iets minder agressief om unieke ID's te behouden
+function strictClean(val) {
     if (val === undefined || val === null) return "";
-    return String(val).toLowerCase().replace(/[^a-z0-9]/g, '').trim(); 
+    return String(val).trim().toLowerCase();
 }
 
 async function readAllSheets(file) {
@@ -33,7 +33,7 @@ async function prepareSource() {
     if (!fileInput.files[0]) return;
     
     document.getElementById('debugCard').style.display = 'block';
-    document.getElementById('debugLog').innerHTML = "LOG START...<br>";
+    document.getElementById('debugLog').innerHTML = "ANALYSE START...<br>";
     
     const allSheets = await readAllSheets(fileInput.files[0]);
     sourceDataMap.clear();
@@ -43,28 +43,25 @@ async function prepareSource() {
         rows.forEach((row, i) => {
             if (i === 0 || !row || row.length < 2) return; 
 
-            // Mapping criteria uit Bestand 2
-            const idB2 = superClean(row[1]);  // Kolom B
-            const titelC = superClean(row[2]); // Kolom C
-            const kleurD = superClean(row[3]); // Kolom D
-            const combineI = titelC + kleurD;  // Samengesteld
+            // Bron locaties: B=1, C=2, D=3, E=4, F=5
+            const idB2 = strictClean(row[1]); 
+            const titelC = strictClean(row[2]);
+            const kleurD = strictClean(row[3]);
+            const combiKey = `${idB2}|${titelC} ${kleurD}`;
             
-            // DE DATA DIE WE NODIG HEBBEN
-            const salePrijs = row[4];   // Kolom E
-            const percentage = row[5];  // Kolom F
+            const salePrijs = row[4];   // SalePrijs
+            const percentage = row[5];  // Percentage
 
-            if (idB2 && combineI) {
-                const key = `${idB2}|${combineI}`;
-                sourceDataMap.set(key, { salePrijs, percentage });
-                
-                // Debug eerste rij met 38 euro
-                if (salePrijs == 38) {
-                    log(`BRON GEVONDEN: ID ${row[1]} met prijs ${salePrijs} opgeslagen.`);
+            if (idB2) {
+                // Als er al een prijs staat voor deze sleutel, loggen we dat
+                if (sourceDataMap.has(combiKey)) {
+                    log(`⚠️ Dubbele match gevonden voor ${combiKey}. Oude prijs: ${sourceDataMap.get(combiKey).salePrijs}, Nieuwe: ${salePrijs}`);
                 }
+                sourceDataMap.set(combiKey, { salePrijs, percentage });
             }
         });
     }
-    log(`Klaar! ${sourceDataMap.size} unieke rijen geladen uit Bron.`);
+    log(`✅ Analyse klaar. ${sourceDataMap.size} unieke koppelingen opgeslagen.`);
     document.getElementById('step2').classList.remove('disabled');
 }
 
@@ -77,16 +74,20 @@ async function mapAndDownload() {
     for (const name in allSheets) {
         const rows = allSheets[name];
         const updated = rows.map((row, i) => {
-            if (i === 0) return [...row, "SalePrijs_Nieuw", "Percentage_Nieuw"];
+            if (i === 0) return [...row, "SalePrijs", "Percentage"];
             
-            // Mapping criteria uit Bestand 1
-            const idB1 = superClean(row[3]);    // Kolom D
-            const combineB1 = superClean(row[4]); // Kolom E (Titel Kleur)
+            // Doel locaties: D=3, E=4
+            const idB1 = strictClean(row[3]); 
+            const infoB1 = strictClean(row[4]); 
             
-            const searchKey = `${idB1}|${combineB1}`;
+            const searchKey = `${idB1}|${infoB1}`;
             const match = sourceDataMap.get(searchKey);
 
             if (match) {
+                // DEBUG: Log de match voor de bewuste 38 euro (als voorbeeld)
+                if (match.salePrijs == 38 || match.salePrijs == 75) {
+                    log(`Match gevonden! Sleutel: ${searchKey} -> Prijs: ${match.salePrijs}`);
+                }
                 return [...row, match.salePrijs, match.percentage];
             } else {
                 return [...row, "", ""];
@@ -97,6 +98,6 @@ async function mapAndDownload() {
         XLSX.utils.book_append_sheet(newWorkbook, ws, name);
     }
 
-    log("Bestand gegenereerd. Download start...");
-    XLSX.writeFile(newWorkbook, "FIX_RESULTAAT.xlsx");
+    log("Bestand gereed voor download.");
+    XLSX.writeFile(newWorkbook, "RESULTAAT_GECHECKT.xlsx");
 }
