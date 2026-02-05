@@ -114,9 +114,10 @@ async function mapAndDownload() {
 
                 if (match) {
                     matches++;
-                    // Kolom F: EUROS, Kolom G: PROCENTEN
+                    // Kolom H: EUROS, Kolom I: PROCENTEN
                     newRow[7] = '€' + String(match.f).replace('.', ',');
-                    newRow[8] = String(match.g) + '%';
+                    // Vermenigvuldig percentage met 100 (0.5 wordt 50%)
+                    newRow[8] = (parseFloat(match.g) * 100) + '%';
                 }
                 return newRow;
             });
@@ -131,4 +132,4 @@ async function mapAndDownload() {
         console.error('Fout in mapAndDownload:', error);
         alert('Fout: ' + error.message);
     }
-}
+}Oke 
