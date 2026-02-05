@@ -2,32 +2,26 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Processor</title>
+    <title>Excel Mapper Tool</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <h1>CSV Bestanden Verwerken</h1>
-    <form id="uploadForm">
-        <label for="file1">Upload Bestand 1 (goed):</label>
-        <input type="file" id="file1" accept=".csv,.xlsx"><br><br>
+    <div class="container">
+        <h1>Data Mapper Tool</h1>
         
-        <label for="file2">Upload Bestand 2 (niet goed):</label>
-        <input type="file" id="file2" accept=".csv,.xlsx" required><br><br>
-        
-        <label>
-            <input type="checkbox" id="onlyFile2"> Alleen bestand 2 verwerken (voeg kolom I toe)
-        </label><br><br>
-        
-        <button type="submit">Verwerk</button>
-    </form>
-    
-    <div id="result">
-        <a id="downloadLink" style="display:none;" download="resultaat.csv">Download Resultaat CSV</a>
+        <div class="upload-section">
+            <label>1. Upload Bestand 1 (Het Doel):</label>
+            <input type="file" id="file1" accept=".xlsx, .xls, .csv">
+        </div>
+
+        <div class="upload-section">
+            <label>2. Upload Bestand 2 (De Bron):</label>
+            <input type="file" id="file2" accept=".xlsx, .xls, .csv">
+        </div>
+
+        <button id="processBtn">Verwerk en Download</button>
     </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
