@@ -53,6 +53,7 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         results2.data.forEach(row => {
             if (row.C && row.D) {
                 const kolomI = (row.C || '').trim() + ' ' + (row.D || '').trim();
+                row.I = kolomI;  // Voeg kolom I toe aan de data
                 const key = (row.B || '').trim().toLowerCase() + kolomI.toLowerCase();
                 map[key] = {
                     G: row.G || '',
@@ -60,6 +61,12 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
                 };
             }
         });
+        
+        if (results2.data.length > 0) {
+            const row = results2.data[0];
+            const kolomI = (row.C || '').trim() + ' ' + (row.D || '').trim();
+            alert('Bestand 2 eerste rij: B=' + row.B + ', C=' + row.C + ', D=' + row.D + ', kolomI=' + kolomI + ', I=' + row.I);
+        }
         
         alert('Aantal entries in map: ' + Object.keys(map).length);
         if (Object.keys(map).length > 0) {
@@ -70,8 +77,8 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
         parseFile(file1, function(results1) {
             alert('Aantal rijen in bestand 1: ' + results1.data.length);
             if (results1.data.length > 0) {
-                const exampleKey = (results1.data[0].D || '').trim().toLowerCase() + (results1.data[0].E || '').trim().toLowerCase();
-                alert('Voorbeeld key uit bestand 1: ' + exampleKey);
+                const row = results1.data[0];
+                alert('Bestand 1 eerste rij: D=' + row.D + ', E=' + row.E);
             }
             
             // Verwerk bestand 1
