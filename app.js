@@ -95,32 +95,41 @@ async function mapAndDownload() {
 
         for (const name in allSheets) {
             const rows = allSheets[name];
-            const updated = rows.map((row, i) => {
-                if (i === 0) {
-                    let h = [...row];
-                    h[7] = "Prijs (€)"; 
-                    h[8] = "Korting (%)";
-                    return h;
-                }
+            const updated = [];
+            
+            // Voeg header toe
+            if (rows.length > 0) {
+                let h = [...rows[0]];
+                h[7] = "Prijs (€)"; 
+                h[8] = "Korting (%)";
+                updated.push(h);
+            }
+            
+            // Voeg alleen rijen met matches toe
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row) continue;
                 
                 const dVal = String(row[3] || '');
                 const eVal = String(row[4] || '');
                 const key = dVal.trim().toLowerCase() + eVal.trim().toLowerCase();
                 
                 const match = sourceDataMap.get(key);
-
-                let newRow = [...row];
-                while (newRow.length < 9) newRow.push("");
-
+                
+                // Alleen toevoegen als er een match is (kolom F en G gevuld)
                 if (match) {
                     matches++;
+                    let newRow = [...row];
+                    while (newRow.length < 9) newRow.push("");
+                    
                     // Kolom H: EUROS, Kolom I: PROCENTEN
                     newRow[7] = '€' + String(match.f).replace('.', ',');
                     // Vermenigvuldig percentage met 100 (0.5 wordt 50%)
                     newRow[8] = (parseFloat(match.g) * 100) + '%';
+                    
+                    updated.push(newRow);
                 }
-                return newRow;
-            });
+            }
 
             const ws = XLSX.utils.aoa_to_sheet(updated);
             XLSX.utils.book_append_sheet(newWorkbook, ws, name);
@@ -132,4 +141,4 @@ async function mapAndDownload() {
         console.error('Fout in mapAndDownload:', error);
         alert('Fout: ' + error.message);
     }
-}Oke 
+}
